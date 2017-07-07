@@ -103,3 +103,4 @@ ENV/
 # my data file
 *.csv
 *.DS_Store
+*.txt

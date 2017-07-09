@@ -104,3 +104,5 @@ ENV/
 *.csv
 *.DS_Store
 *.txt
+*.test
+*.xls

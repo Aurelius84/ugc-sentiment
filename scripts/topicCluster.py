@@ -16,7 +16,7 @@ from collections import defaultdict
 import pandas as pd
 from sklearn.cluster import AffinityPropagation
 
-sys.path.append('/Users/zhangliujie/Documents/project/the_machine')
+sys.path.append('/home/kevin/Documents/Project/the_machine')
 from utils.dataHelper import Feature, segDataset
 
 reload(sys)
@@ -24,15 +24,15 @@ sys.setdefaultencoding('utf8')
 
 
 def xls2txt():
-    df = pd.read_excel('../docs/sensitive.xls')
-    with open('../docs/sensitive.txt', 'w') as f:
+    df = pd.read_excel('../docs/sensitive_20.xls')
+    with open('../docs/sensitive_20.txt', 'w') as f:
         for i in range(len(df['Id'])):
             cont = ['%s' % x for x in df.iloc[i, :].tolist()]
             f.write('|@|'.join(cont) + '\n')
 
 
 def check():
-    data = open('../docs/sensitive.txt', 'r').readlines()
+    data = open('../docs/sensitive_20.txt', 'r').readlines()
     data = [x.split('|@|') for x in data]
     for line in data:
         try:
@@ -47,6 +47,7 @@ def check():
 if __name__ == '__main__':
     # xls2txt()
     # check()
+    # exit()
     df = open('../docs/shenyang.txt', 'r').readlines()
     datas = [x.split('|@|') for x in df]
     desc_and_content = [line[3] + line[4] for line in datas]

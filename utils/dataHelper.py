@@ -25,7 +25,9 @@ from sklearn.feature_extraction.text import (CountVectorizer,
                                              HashingVectorizer,
                                              TfidfVectorizer)
 from sklearn.feature_selection import SelectKBest, chi2
-
+import os
+import itertools
+from os.path import join, exists, split
 logging.getLogger().setLevel(logging.INFO)
 
 
@@ -119,7 +121,7 @@ class Feature(object):
         :param X_data:训练文本集,必须
         :param Y_data:训练标签集,必须
         :param test_data:测试文本集,非必须
-        :param test_label:测试标签集,非必须
+        :param test_label:测试标签集,非必须load_data
         :param n_features:特征数
         :return:特征向量
         '''
@@ -201,173 +203,240 @@ class Feature(object):
         return x_data_vec
 
 
-class dynDict(object):
-    '''
-    动态字典构造词向量
-    '''
+def train_word2vec(sentence_matrix,
+                   vocabulary_inv,
+                   num_features=100,
+                   min_word_count=1,
+                   context=10):
+    """
+    Trains, saves, loads Word2Vec model
+    Returns initial weights for embedding layer.
 
-    def __init__(self, X_datas, Y_labels):
-        if len(X_datas) != len(Y_labels):
-            print('datas is not same length as lables')
-            exit()
-        # 文档集
-        self.X = X_datas
-        # 标签集
-        self.Y = Y_labels
-        # 类目集
-        self.cates = set(Y_labels)
-        # 文本最大默认词数
-        self.max_words_len = 10
-        # 默认词强度
-        self.theta = 1e-4
-        # 语料词强度计算
-        self.transform2Dict()
+    inputs:
+    sentence_matrix # int matrix: num_sentences x max_sentence_len
+    vocabulary_inv  # dict {str:int}
+    num_features    # Word vector dimensionality
+    min_word_count  # Minimum word count
+    context         # Context window size
+    """
+    model_dir = os.path.abspath('../docs') + '/model/w2v_matrix'
+    model_name = "{:d}features_{:d}minwords_{:d}context".format(
+        num_features, min_word_count, context)
+    model_name = join(model_dir, model_name)
+    if exists(model_name):
+        embedding_model = word2vec.Word2Vec.load(model_name)
+        print('Load existing Word2Vec model \'%s\'' % split(model_name)[-1])
+    else:
+        # Set values for various parameters
+        num_workers = 2  # Number of threads to run in parallel
+        downsampling = 1e-3  # Downsample setting for frequent words
 
-    def conVec(self, words):
-        '''
-        文本转化为词向量
-        :param words_list:词列表或空格拼接的词串
-        :return:词向量 长度:5*类目数
-        '''
-        words_vec = []
-        if isinstance(words, list):
-            words_list = list(set(words))
+        # Initialize and train the model
+        print('Training Word2Vec model...')
+        sentences = [[vocabulary_inv[w] for w in s] for s in sentence_matrix]
+        embedding_model = word2vec.Word2Vec(
+            sentences,
+            workers=num_workers,
+            size=num_features,
+            min_count=min_word_count,
+            window=context,
+            sample=downsampling)
+
+        # If we don't plan to train the model any further, calling
+        # init_sims will make the model much more memory-efficient.
+        embedding_model.init_sims(replace=True)
+
+        # Saving the model for later use. You can load it later using
+        # Word2Vec.load()
+        if not exists(model_dir):
+            os.mkdir(model_dir)
+        print('Saving Word2Vec model \'%s\'' % split(model_name)[-1])
+        embedding_model.save(model_name)
+
+    # add unknown words
+    embedding_weights = [
+        np.array([
+            embedding_model[w] if w in embedding_model else np.random.uniform(
+                -0.25, 0.25, embedding_model.vector_size)
+            for w in vocabulary_inv
+        ])
+    ]
+    return embedding_weights
+
+
+def load_data_and_labels(file_path,
+                         split_tag='\t',
+                         lbl_text_index=[0, 1],
+                         use_jieba_segment=False,
+                         is_shuffle=False):
+    """
+    Loads MR polarity data from files, splits the data into words and generates labels.
+    Returns split sentences and labels.
+    """
+
+    # Load data from files
+    raw_data = list(open(file_path, 'r').readlines())
+    # parse label
+    labels = [
+        data.strip('\n').split(split_tag)[lbl_text_index[0]]
+        for data in raw_data
+    ]
+    # parse text
+    texts = [
+        data.strip('\n').split(split_tag)[lbl_text_index[1]]
+        for data in raw_data
+    ]
+    if use_jieba_segment:
+        texts = segDataset(texts)
+
+    # Split by words
+    # texts = [clean_str(sent) for sent in texts]
+    texts = [filter(lambda a: a != '', s.split(" ")) for s in texts]
+    # support multi-label
+    labels = [filter(lambda a: a != '', s.split(" ")) for s in labels]
+    if is_shuffle:
+        ind = np.arange(len(texts))
+        np.random.shuffle(ind)
+        texts = list(np.array(texts)[ind])
+        labels = list(np.array(labels)[ind])
+
+    return texts, labels
+
+
+def load_trn_tst_data_labels(trn_file,
+                             tst_file=None,
+                             ratio=0.2,
+                             split_tag='\t',
+                             lbl_text_index=[0, 1],
+                             is_shuffle=False):
+    """
+    Loads train data and test data,return segment words and labels
+    if tst_file is None , split train data by ratio
+    """
+    # train data
+    trn_data, trn_labels = load_data_and_labels(
+        trn_file, split_tag, lbl_text_index, is_shuffle=is_shuffle)
+
+    # test data
+    if tst_file:
+        tst_data, tst_labels = load_data_and_labels(
+            tst_file, split_tag, lbl_text_index, is_shuffle=is_shuffle)
+    else:
+        index = np.arange(len(trn_labels))
+        np.random.shuffle(index)
+        split_n = int(ratio * len(trn_labels))
+
+        trn_data = np.array(trn_data)
+        trn_labels = np.array(trn_labels)
+
+        tst_data, tst_labels = trn_data[index[:split_n]], trn_labels[
+            index[:split_n]]
+        trn_data, trn_labels = trn_data[index[split_n:]], trn_labels[index[
+            split_n:]]
+
+    return list(trn_data), list(trn_labels), list(tst_data), list(tst_labels)
+
+
+def pad_sentences(sentences, padding_word="<PAD/>", mode='max'):
+    """
+    Pads all sentences to the same length. The length is defined by the longest sentence.
+    Returns padded sentences.
+    """
+    if isinstance(mode, int):
+        sequence_length = mode
+    elif mode == 'max':
+        sequence_length = max(len(x) for x in sentences)
+    else:
+        sequence_length = sum(len(x) for x in sentences) / len(sentences)
+    padded_sentences = []
+    for i in range(len(sentences)):
+        sentence = sentences[i]
+        if len(sentence) < sequence_length:
+            num_padding = sequence_length - len(sentence)
+            new_sentence = sentence + [padding_word] * num_padding
         else:
-            words_list = list(set(words.split()))
-        if len(words_list) > self.max_words_len:
-            self.max_words_len = len(words_list)
-        # 短文本最大词长
-        senti_val = [self.theta] * self.max_words_len
-        # 对每个类目均获取一组动态词向量
-        for cate in self.cates:
-            for i in range(len(words_list)):
-                if words_list[i] in self.dict_senti_cate_words[cate]:
-                    senti_val[i] = self.dict_senti_cate_words[cate][words_list[
-                        i]]
-            senti_val.sort(reverse=True)
-            aver = sum(senti_val) / self.max_words_len
-            top1 = senti_val[0]
-            top3 = sum(senti_val[:4])
-            top5 = sum(senti_val[:6])
-            top7 = sum(senti_val[:8])
-            # 动态词向量
-            words_vec.extend([aver, top1, top3, top5, top7])
-
-        return words_vec
-
-    def transform2Dict(self):
-        '''
-        对语料进行动态词权重计算
-        :return:各个类目下相对词权重
-        '''
-        # 各个类目下,词的分布
-        dict_cate_words = dict.fromkeys(self.cates, defaultdict(int))
-        # 全部语料下,词的分布
-        dict_words_all = defaultdict(int)
-        # 词典统计
-        for i in range(len(self.Y)):
-            # 文档为词列表时
-            if isinstance(self.X[i], list):
-                words_list = self.X[i]
-            else:  # 文档为空格分割的字符串时
-                words_list = self.X[i].split()
-            for word in words_list:
-                # 第i行语料对应的类目下该词cnt+1
-                dict_cate_words[self.Y[i]][word] += 1
-                # 总词典下该词cnt+1
-                dict_words_all[word] += 1
-
-        self.dict_senti_cate_words = dict.fromkeys(self.cates,
-                                                   defaultdict(float))
-        # 总文档数
-        L = len(self.Y)
-        # 各个类别分布
-        cate_cnt = Counter(self.Y)
-        for cate in dict_cate_words:
-            # 类别cate的数目
-            C = cate_cnt[cate]
-            for word in dict_cate_words[cate]:
-                # 全文当下词word的词频
-                cnt = dict_cate_words[cate][word]
-                N = dict_words_all[word]
-                # 计算词权重
-                weight = (cnt + 1) / (N - cnt + 1) * (L - C + 1) / (C + 1)
-                # 保存
-                self.dict_senti_cate_words[cate][word] = weight
+            new_sentence = sentence[:sequence_length]
+        padded_sentences.append(new_sentence)
+    return padded_sentences
 
 
-def segment(content, nomial=False, only_cn=False):
-    '''
-    分词
-    :param content: 待分词文本
-    :param nomial:是否仅仅保留动名词
-    :return:'a b c'
-    '''
-    content = str(content)
-    if nomial:
-        nomial_words = []
-        words = pseg.cut(content)
-        for word in words:
-            # print(word.word,word.flag)
-            if contain(['n', 'v', 'd', 'a'], word.flag):
-                nomial_words.append(word.word)
-        words = filter(is_uchar, nomial_words) if only_cn else nomial_words
-        return ' '.join(nomial_words)
+def build_vocab(sentences, padding_word="<PAD/>"):
+    """
+    Builds a vocabulary mapping from word to index based on the sentences.
+    Returns vocabulary mapping and inverse vocabulary mapping.
+    """
+    # Build vocabulary
+    word_counts = Counter(itertools.chain(*sentences))
+    # Mapping from index to word
+    vocabulary_inv = [x[0] for x in word_counts.most_common()]
+    # set padding_word id == 0
+    vocabulary_inv.remove(padding_word)
+    vocabulary_inv.insert(0, padding_word)
+    # Mapping from word to index
+    vocabulary = {x: i for i, x in enumerate(vocabulary_inv)}
+    return [vocabulary, vocabulary_inv]
+
+
+def build_input_data(sentences, labels, vocabulary, padding_word="<PAD/>"):
+    """
+    Maps sentencs and labels to vectors based on a vocabulary.
+    """
+    x = np.array([[
+        vocabulary[word] if word in vocabulary else vocabulary[padding_word]
+        for word in sentence
+    ] for sentence in sentences])
+    y = np.array(labels)
+    return [x, y]
+
+
+def load_data(trn_file,
+              tst_file=None,
+              ratio=0.2,
+              split_tag='\t',
+              lbl_text_index=[0, 1],
+              vocabulary=None,
+              vocabulary_inv=None,
+              padding_mod='max',
+              is_shuffle=True,
+              use_jieba_segment=False,
+              use_tst=False):
+    """
+    Loads and preprocessed data for the MR dataset.
+    Returns input vectors, labels, vocabulary, and inverse vocabulary.
+    """
+    # Load and preprocess data
+    print("%s  loading train data and label....." %
+          time.asctime(time.localtime(time.time())))
+    trn_text, trn_labels = load_data_and_labels(
+        trn_file, split_tag, lbl_text_index, is_shuffle=is_shuffle, use_jieba_segment=use_jieba_segment)
+    if tst_file:
+        print("%s  loading train data and label....." %
+              time.asctime(time.localtime(time.time())))
+        tst_text, tst_labels = load_data_and_labels(
+            tst_file, split_tag, lbl_text_index, is_shuffle=is_shuffle)
+        sentences, labels = trn_text + tst_text, trn_labels + tst_labels
     else:
-        words = jieba.lcut(content, HMM=True)
-        words = filter(is_uchar, words) if only_cn else words
-        return ' '.join(words)
+        sentences, labels = trn_text, trn_labels
+    print("%s  padding sentences....." %
+          time.asctime(time.localtime(time.time())))
+    sentences_padded = pad_sentences(sentences, mode=padding_mod)
 
+    if vocabulary is None or vocabulary_inv is None:
+        print("%s  building vocab....." %
+              time.asctime(time.localtime(time.time())))
+        vocabulary, vocabulary_inv = build_vocab(sentences_padded)
 
-def segDataset(data_set, parrel=False, nomial=False, only_cn=False):
-    '''
-    文档集分词
-    :param data_set:文档集
-    :param parrel:是否并行分词,windows不支持
-    :param nomial:是否仅仅保留动名词
-    :return:['a b c','e d g',....]
-    '''
-    data_cut = []
-    start = time.time()
-    print('start cut dataset....')
-    if parrel:
-        p = ThreadPool(4)
-        data_cut = p.map(segment, data_set)
-        p.close()
-        p.join()
-    else:
-        for content in data_set:
-            data_cut.append(segment(content, nomial, only_cn))
-    end = time.time()
-    print('cost time %0.2f seconds.' % (end - start))
-    return data_cut
+    x, y = build_input_data(sentences_padded, labels, vocabulary)
 
+    if tst_file is None and not use_tst:
+        return [x, y, vocabulary, vocabulary_inv]
+    elif tst_file:
+        split_n = len(trn_text)
+    elif use_tst:
+        split_n = int(ratio * len(trn_text))
 
-def contain(_list, _string):
-    '''
-    检测字符串是否包含某种字符
-    :param _list: 字符模式
-    :param _string: 匹配字符串
-    :return: T or F
-    '''
-    for _str in _list:
-        if _string.find(_str) != -1:
-            return True
-    return False
-
-
-def wordToVec(word, model):
-    '''
-    获取词向量
-    :param word: utf-8格式 词
-    :return: 词向量一维矩阵
-            [0.1,0.3,....]
-    '''
-    try:
-        return model[word]
-    except KeyError:
-        print('no key of {0}'.format(word))
-        return np.zeros([1, 100])
+    return x[split_n:], y[
+        split_n:], x[:split_n], y[:split_n], vocabulary, vocabulary_inv
 
 
 def readExcelByCol(file_name, col):
@@ -388,18 +457,49 @@ def readExcelByCol(file_name, col):
         yield data
 
 
-def loadStopWords(file_name):
+def segment(content, nomial=False):
     '''
-    加载停用词
-    :param file_name: 停用词表路径
-    :return: set()
+    分词
+    :param content: 待分词文本
+    :param nomial:是否仅仅保留动名词
+    :return:'a b c'
     '''
-    stop_words = set()
-    with open(file_name, 'rb') as f:
-        for line in f:
-            word = line.decode('utf-8').strip()
-            ['', stop_words.add(word)][word is True]
-    return stop_words
+    content = str(content)
+    if nomial:
+        nomial_words = []
+        words = pseg.cut(content)
+        for word in words:
+                # print(word.word,word.flag)
+            if contain(['n', 'v', 'd', 'a'], word.flag):
+                nomial_words.append(word.word)
+        return ' '.join(nomial_words)
+    else:
+        words = jieba.lcut(content.strip('\n'), HMM=True)
+        return ' '.join(words)
+
+
+def segDataset(data_set, parrel=False, nomial=False):
+    '''
+    文档集分词
+    :param data_set:文档集
+    :param parrel:是否并行分词,windows不支持
+    :param nomial:是否仅仅保留动名词
+    :return:['a b c','e d g',....]
+    '''
+    data_cut = []
+    start = time.time()
+    print('start cut dataset....')
+    if parrel:
+        p = ThreadPool(4)
+        data_cut = p.map(segment, data_set)
+        p.close()
+        p.join()
+    else:
+        for content in data_set:
+            data_cut.append(segment(content, nomial))
+    end = time.time()
+    print('cost time %0.2f seconds.' % (end - start))
+    return data_cut
 
 
 def segmentByStopwords(sentence, stop_words):
@@ -415,18 +515,30 @@ def segmentByStopwords(sentence, stop_words):
     return words
 
 
-def clean_str(s):
+def loadStopWords(file_name):
     '''
-    字符串清洗
-    :param s:原始字符串
-    :return:
+    加载停用词
+    :param file_name: 停用词表路径
+    :return: set()
     '''
+    stop_words = set()
+    with open(file_name, 'rb') as f:
+        for line in f:
+            word = line.decode('utf-8').strip()
+            ['', stop_words.add(word)][word != '']
+    return stop_words
 
-    pattern = r"[0-9:()（）,!！?'`%？#.、。，+*/@“”•－：;]"
-    s = re.sub(pattern, "", str(s))
-    s = re.sub(r"\u2022", "", s)
 
-    return s.strip()
+def save_var(file_path, var):
+    with open(file_path, 'w') as f:
+        var = ['%s\n' % x for x in var]
+        f.writelines(var)
+
+
+def load_var(file_path):
+    with open(file_path, 'r') as f:
+        var = [x.strip('\n') for x in f.readlines()]
+        return var
 
 
 def is_uchar(uchar):

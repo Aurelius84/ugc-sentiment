@@ -48,7 +48,7 @@ if __name__ == '__main__':
     # xls2txt()
     # check()
     # exit()
-    df = open('../docs/shenyang.txt', 'r').readlines()
+    df = open('../docs/shenyang_20.txt', 'r').readlines()
     datas = [x.split('|@|') for x in df]
     desc_and_content = [line[3] + line[4] for line in datas]
     # segment
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     cluter_indices = defaultdict(list)
     for line, clu in enumerate(cluster_res.labels_):
         cluter_indices[clu].append(line)
-    with open('../docs/shenyang_cluster.txt', 'w') as f, open('../docs/shenyang_cluster_detail.txt', 'w') as fd:
+    with open('../docs/shenyang_20_cluster.txt', 'w') as f, open('../docs/shenyang_20_cluster_detail.txt', 'w') as fd:
         for key in cluter_indices:
             contents = [
                 '%s|@|%s\n' % (key, ' '.join(gt(tfidf_vec[ind])[0]))

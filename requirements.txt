@@ -1,6 +1,8 @@
-pandas==0.20.2
-word2vec==0.9.1
 xlrd==1.0.0
-numpy==1.13.1
+numpy==1.11.0
 jieba==0.38
-scikit_learn==0.18.2
+Keras==2.0.4
+pandas==0.20.3
+scikit_learn==0.19b2
+word2vec==0.9.1
+PyYAML==3.12

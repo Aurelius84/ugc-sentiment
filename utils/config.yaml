@@ -12,39 +12,60 @@ X:
     embedding_dim: 8
 Conv1D:
     layer1:
-        filters:       32
-        filter_size:   3
+        filters:       64
+        filter_size:   5
         padding_mode:   'valid'
-        pooling_size:  2 # default 2
+        pooling_size:  3 # default 2
         dropout:       0.3
         batch_norm: {momentum: 0.9}
     layer2:
         filters:       64
-        filter_size:   3
+        filter_size:   5
         padding_mode:   'valid'
-        pooling_size:  2 # default 2
+        pooling_size:  3 # default 2
         dropout:      0.3
         batch_norm: {momentum: 0.9}
     layer3:
-        filters:       128
-        filter_size:   2
+        filters:       32
+        filter_size:   3
         padding_mode:   'valid'
-        pooling_size:  2 # default 2
+        pooling_size:  3 # default 2
         dropout:      0.3
         batch_norm: {momentum: 0.9}
+    layer4:
+        filters:       32
+        filter_size:   3
+        padding_mode:   'valid'
+        pooling_size:  3 # default 2
+        dropout:      0.3
+        batch_norm: {momentum: 0.9}
+    # layer5:
+    #     filters:       96
+    #     filter_size:   7
+    #     padding_mode:   'valid'
+    #     pooling_size:  3 # default 2
+    #     dropout:      0.3
+    #     batch_norm: {momentum: 0.9}
+    # layer6:
+    #     filters:       96
+    #     filter_size:   7
+    #     padding_mode:   'valid'
+    #     pooling_size:  3 # default 2
+    #     dropout:      0.3
+    #     batch_norm: {momentum: 0.9}
 LSTM:
     layer1:
-        cell:       128
+        cell:       32
         return_sequences:   true
-        batch_norm: {momentum: 0.9}
+        # batch_norm: {momentum: 0.9}
         dropout:       0.3
     layer2:
-        cell:       128
-        return_sequences:   true
+        cell:       32
+        return_sequences:   false
         batch_norm: {momentum: 0.9}
         dropout:       0.3
     # layer3:
-    #     cell:       128
+    #     cell:       32
     #     return_sequences:   false
     #     batch_norm: {momentum: 0.9}
     #     dropout:       0.3
@@ -54,7 +75,7 @@ H1:
     dropout:     0.3
     # batch_norm: {momentum: 0.9}
 Y:
-    loss_func:  'mean_squared_error'
+    loss_func:  'logcosh'
     W_regularizer: 0.1
-    activity_reg: {l1: 0.1}
+    # activity_reg: {l1: 0.1}
     batch_norm: {momentum: 0.9}

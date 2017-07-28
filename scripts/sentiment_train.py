@@ -18,12 +18,12 @@ import numpy as np
 import json
 import pickle
 from copy import deepcopy
+from collections import Counter
 from sklearn import preprocessing
 from sklearn.metrics import classification_report
 
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.optimizers import Adagrad, RMSprop
-from keras.metrics import categorical_accuracy
 sys.path.append(os.getcwd()[:-7])
 from utils.assemble import assemble
 from utils.dataHelper import load_data, save_var
@@ -60,7 +60,7 @@ def train(train_dataset,
         embedding_weights = [
             np.array([
                 np.array(sentiment_dict[w]) if w in sentiment_dict else
-                np.random.uniform(0, 0.01, params['X']['embedding_dim']) for w in vocabulary_inv
+                np.random.uniform(0, 0., params['X']['embedding_dim']) for w in vocabulary_inv
             ])
         ]
 
@@ -68,7 +68,6 @@ def train(train_dataset,
             train_dataset['X'] = embedding_weights[0][train_dataset['X']]
             test_dataset['X'] = embedding_weights[0][test_dataset['X']]
             valid_dataset['X'] = embedding_weights[0][valid_dataset['X']]
-
         elif params['iter']['model_type'] == "CNN-non-static":
             embedding_layer = model.get_layer('embedding')
             embedding_layer.set_weights(embedding_weights)
@@ -97,7 +96,7 @@ def train(train_dataset,
             verbose=0,
             save_best_only=True,
             mode='min'),
-        EarlyStopping(monitor='val_loss', patience=15, verbose=1, mode='min'),
+        EarlyStopping(monitor='val_loss', patience=16, verbose=1, mode='min'),
     ]
 
     # Fit the model to the data
@@ -130,6 +129,7 @@ def train(train_dataset,
         ]))
         print('target: %s' % category[targets[i]])
         print('predict: %s' % category[preds[i]])
+        print('probs: %s' % probs[i])
 
     print(classification_report(targets, preds, target_names=category))
 
@@ -151,7 +151,7 @@ def loadSentimentVector(file_name):
 
 if __name__ == '__main__':
     # load sentiment vector
-    sentiment_dict = loadSentimentVector('../docs/kw_dict.txt')
+    sentiment_dict = loadSentimentVector('../docs/extend_dict.txt')
 
     # Load the datasets
     trn_text, trn_labels, tst_text, tst_labels, vocabulary, vocabulary_inv = load_data(
@@ -169,6 +169,8 @@ if __name__ == '__main__':
     category = ['-1', '0', '1']
     # [0] -> 0
     trn_labels = [yy[0] for yy in trn_labels]
+    print(Counter(trn_labels))
+
     tst_labels = [yy[0] for yy in tst_labels]
     # save category
     save_var('../docs/model/checkpoints/category', category)
@@ -192,10 +194,10 @@ if __name__ == '__main__':
     pickle.dump(params, open('../docs/model/checkpoints/params', 'wb'))
     print(trn_text[0])
     print(trn_labels[0])
-    ratio = 0.3
+    ratio = 0.4
     valid_N = int(ratio * tst_text.shape[0])
     train_dataset = {'X': trn_text, 'Y': trn_labels}
     valid_dataset = {'X': tst_text[:valid_N], 'Y': tst_labels[:valid_N, :]}
     test_dataset = {'X': tst_text[valid_N:], 'Y': tst_labels[valid_N:, :]}
     # start train
-    train(train_dataset, valid_dataset, test_dataset, params, model_flag='deep_lstm')
+    train(train_dataset, valid_dataset, test_dataset, params, model_flag='deep_conv')

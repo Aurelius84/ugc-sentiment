@@ -103,6 +103,6 @@ ENV/
 # my data file
 *.csv
 *.DS_Store
-docs/*.txt
+docs/ignore/*
 *.test
 *.xls

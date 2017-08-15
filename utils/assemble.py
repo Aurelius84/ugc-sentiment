@@ -148,6 +148,10 @@ def assemble_deep_lstm(params):
         # lstm_input = attention_3d_block(lstm_input, params['X']['sequence_length'], single_attention_vector=False)
         lstm_out = GRU(
             params['LSTM']['layer%s' % i]['cell'],
+            recurrent_activation='sigmoid',
+            kernel_regularizer=l2(0.01),
+            dropout=0.2,
+            recurrent_dropout=0.2,
             return_sequences=True)(lstm_input)
         # batch_norm
         if 'batch_norm' in params['LSTM']['layer%s' % i]:
@@ -159,17 +163,24 @@ def assemble_deep_lstm(params):
                 params['LSTM']['layer%s' % i]['dropout'])(lstm_out)
     # last lstm
     lstm_out = GRU(
-        params['LSTM']['layer%s' % lstm_layer_num]['cell'])(lstm_out)
-    # ATTENTION PART STARTS HERE
-    attention_probs = Dense(
         params['LSTM']['layer%s' % lstm_layer_num]['cell'],
-        activation='softmax',
-        name='attention_vec')(lstm_out)
-    lstm_out = merge(
-        [lstm_out, attention_probs],
-        output_shape=32,
-        name='attention_mul',
-        mode='mul')
+        recurrent_activation='selu',
+        kernel_regularizer=l2(0.01),
+        # kernel_initializer='lecun_normal',
+        # recurrent_initializer='glorot_uniform',
+        dropout=0.2,
+        recurrent_dropout=0.2,
+        )(lstm_out)
+    # ATTENTION PART STARTS HERE
+    # attention_probs = Dense(
+    #     params['LSTM']['layer%s' % lstm_layer_num]['cell'],
+    #     activation='softmax',
+    #     name='attention_vec')(lstm_out)
+    # lstm_out = merge(
+    #     [lstm_out, attention_probs],
+    #     output_shape=8,
+    #     name='attention_mul',
+    #     mode='mul')
     # ATTENTION PART FINISHES HERE
     # batch_norm
     if 'batch_norm' in params['LSTM']['layer%s' % lstm_layer_num]:

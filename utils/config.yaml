@@ -1,8 +1,8 @@
 # params config
 
 iter:
-    batch_size:    48
-    epoch:         20
+    batch_size:    8
+    epoch:         40
     learn_rate:    0.01
     model_dir:     '../docs/model/checkpoints/'
     model_name:    'default_best.h5'
@@ -13,69 +13,55 @@ X:
 Conv1D:
     layer1:
         filters:       64
-        filter_size:   5
+        filter_size:   3
         padding_mode:   'valid'
-        pooling_size:  3 # default 2
+        pooling_size:  2 # default 2
         dropout:       0.3
         batch_norm: {momentum: 0.9}
     layer2:
         filters:       64
-        filter_size:   5
+        filter_size:   3
         padding_mode:   'valid'
-        pooling_size:  3 # default 2
+        pooling_size:  2 # default 2
         dropout:      0.3
         batch_norm: {momentum: 0.9}
     layer3:
         filters:       32
-        filter_size:   3
+        filter_size:   2
         padding_mode:   'valid'
-        pooling_size:  3 # default 2
+        pooling_size:  2 # default 2
         dropout:      0.3
         batch_norm: {momentum: 0.9}
     layer4:
         filters:       32
-        filter_size:   3
+        filter_size:   2
         padding_mode:   'valid'
-        pooling_size:  3 # default 2
+        pooling_size:  2 # default 2
         dropout:      0.3
         batch_norm: {momentum: 0.9}
-    # layer5:
-    #     filters:       96
-    #     filter_size:   7
-    #     padding_mode:   'valid'
-    #     pooling_size:  3 # default 2
-    #     dropout:      0.3
-    #     batch_norm: {momentum: 0.9}
-    # layer6:
-    #     filters:       96
-    #     filter_size:   7
-    #     padding_mode:   'valid'
-    #     pooling_size:  3 # default 2
-    #     dropout:      0.3
-    #     batch_norm: {momentum: 0.9}
 LSTM:
     layer1:
-        cell:       32
+        cell:       8
         return_sequences:   true
         # batch_norm: {momentum: 0.9}
-        dropout:       0.3
+      # dropout:       0.3
     layer2:
-        cell:       32
+        cell:       8
         return_sequences:   false
-        batch_norm: {momentum: 0.9}
-        dropout:       0.3
+        # batch_norm: {momentum: 0.9}
+        # dropout:       0.3
     # layer3:
     #     cell:       32
     #     return_sequences:   false
     #     batch_norm: {momentum: 0.9}
     #     dropout:       0.3
-H1:
-    dim:         256
-    cell: 256
-    dropout:     0.3
+# H1:
+#     dim:         256
+#     cell: 256
+#     dropout:     0.3
     # batch_norm: {momentum: 0.9}
 Y:
-    loss_func:  'logcosh'
+    loss_func:  'categorical_crossentropy'
     W_regularizer: 0.1
-    # activity_reg: {l1: 0.1}
-    batch_norm: {momentum: 0.9}
+    activity_reg: {l1: 0.1}
+    # batch_norm: {momentum: 0.9}

@@ -21,9 +21,8 @@ import jieba.posseg as pseg
 import numpy as np
 import word2vec
 import xlrd
-from sklearn.feature_extraction.text import (CountVectorizer,
-                                             HashingVectorizer,
-                                             TfidfVectorizer)
+from sklearn.feature_extraction.text import (
+    CountVectorizer, HashingVectorizer, TfidfVectorizer)
 from sklearn.feature_selection import SelectKBest, chi2
 import os
 import itertools
@@ -408,7 +407,11 @@ def load_data(trn_file,
     print("%s  loading train data and label....." %
           time.asctime(time.localtime(time.time())))
     trn_text, trn_labels = load_data_and_labels(
-        trn_file, split_tag, lbl_text_index, is_shuffle=is_shuffle, use_jieba_segment=use_jieba_segment)
+        trn_file,
+        split_tag,
+        lbl_text_index,
+        is_shuffle=is_shuffle,
+        use_jieba_segment=use_jieba_segment)
     if tst_file:
         print("%s  loading train data and label....." %
               time.asctime(time.localtime(time.time())))
@@ -457,6 +460,69 @@ def readExcelByCol(file_name, col):
         yield data
 
 
+def corpus_balance(datas, labels, mod='max'):
+    """对语料进行重采样 或 欠采样."""
+    shuffle_indices = np.random.permutation(np.arange(len(datas)))
+    shuffle_datas = np.array(datas)[shuffle_indices]
+    shuffle_labels = np.array(labels)[shuffle_indices]
+    keys = set(labels)
+    label_count = Counter(labels)
+    # 以语料 最多 为标准，对其他类别进行 过采样
+    if mod == 'max':
+        max_label = label_count.most_common(1)[0][0]
+        keys.remove(max_label)
+        for key in keys:
+            data = shuffle_datas[shuffle_labels == key].tolist()
+            label = shuffle_labels[shuffle_labels == key].tolist()
+            ratio = int((label_count[max_label]) * 1. / label_count[key] - 1.5)
+            if ratio < 0:
+                continue
+            for _ in range(ratio):
+                datas.extend(data)
+                labels.extend(label)
+    # 以语料 最少 为标准，对其他类别进行 欠采样
+    elif mod == 'min':
+        min_label = label_count.most_common()[-1][0]
+        datas = shuffle_datas[shuffle_labels == min_label].tolist()
+        labels = shuffle_labels[shuffle_labels == min_label].tolist()
+        keys.remove(min_label)
+        for key in keys:
+            data = shuffle_datas[shuffle_labels == key][:label_count[
+                min_label]].tolist()
+            label = shuffle_labels[shuffle_labels == key][:label_count[
+                min_label]].tolist()
+            datas.extend(data)
+            labels.extend(label)
+    # 均衡采样， 对最多的进行欠抽样，对最少的进行重采样
+    elif mod == 'average':
+        ind = int((len(keys) - 1) / 2.)
+        average_label = label_count.most_common()[ind][0]
+        datas = shuffle_datas[shuffle_labels == average_label].tolist()
+        labels = shuffle_labels[shuffle_labels == average_label].tolist()
+        keys.remove(average_label)
+        for key in keys:
+            ratio = label_count[key] * 1. / label_count[average_label]
+            data = shuffle_datas[shuffle_labels == key]
+            label = shuffle_labels[shuffle_labels == key]
+            if ratio < 0.8:
+                data_shape = (
+                    int(1. / ratio + 0.2),
+                    1) if len(data.shape) == 2 else int(1. / ratio + 0.2)
+                label_shape = (
+                    int(1. / ratio + 0.2),
+                    1) if len(label.shape) == 2 else int(1. / ratio + 0.2)
+                data = np.tile(data, data_shape)
+                label = np.tile(label, label_shape)
+            elif ratio > 1.2:
+                ind = int((1. / ratio + 0.2) * len(data))
+                data = data[:ind]
+                label = label[:ind]
+            datas += data.tolist()
+            labels += label.tolist()
+
+    return datas, labels
+
+
 def segment(content, nomial=False):
     '''
     分词
@@ -469,7 +535,7 @@ def segment(content, nomial=False):
         nomial_words = []
         words = pseg.cut(content)
         for word in words:
-                # print(word.word,word.flag)
+            # print(word.word,word.flag)
             if contain(['n', 'v', 'd', 'a'], word.flag):
                 nomial_words.append(word.word)
         return ' '.join(nomial_words)

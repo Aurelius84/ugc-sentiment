@@ -24,9 +24,10 @@ from sklearn.metrics import classification_report
 
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.optimizers import Adagrad, RMSprop
-sys.path.append(os.getcwd()[:-7])
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
 from utils.assemble import assemble
-from utils.dataHelper import load_data, save_var
+from utils.dataHelper import load_data, save_var, corpus_balance, pad_sentences
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -96,7 +97,7 @@ def train(train_dataset,
             verbose=0,
             save_best_only=True,
             mode='min'),
-        EarlyStopping(monitor='val_loss', patience=16, verbose=1, mode='min'),
+        EarlyStopping(monitor='val_loss', patience=25, verbose=1, mode='min'),
     ]
 
     # Fit the model to the data
@@ -151,36 +152,53 @@ def loadSentimentVector(file_name):
 
 if __name__ == '__main__':
     # load sentiment vector
-    sentiment_dict = loadSentimentVector('../docs/extend_dict.txt')
+    sentiment_dict = loadSentimentVector('../docs/kw_dict.txt')
+    # use sentiment_dict as vocabulary
+    vocabulary_inv = ["<PAD/>"] + list(sentiment_dict.keys())
+    vocabulary = {x: i for i, x in enumerate(vocabulary_inv)}
 
     # Load the datasets
-    trn_text, trn_labels, tst_text, tst_labels, vocabulary, vocabulary_inv = load_data(
+    texts, labels, vocabulary, vocabulary_inv = load_data(
         '../docs/keySentence.txt',
-        use_tst=True,
+        use_tst=False,
         lbl_text_index=[0, 1],
         split_tag='|',
         padding_mod='max',
         use_jieba_segment=True,
-        # vocabulary=vocabulary,
-        # vocabulary_inv=vocabulary_inv,
-        ratio=0.3)
+        vocabulary=vocabulary,
+        vocabulary_inv=vocabulary_inv
+        )
+
+    labels = [x[0] for x in labels]
+    # filter by sentiment_dict
+    texts = [filter(lambda x: x != 0, content) for content in texts]
+    print(texts[:3])
+    # padding
+    texts = pad_sentences(texts, padding_word=0, mode='average')
+    texts, labels = corpus_balance(texts, labels, mod='average')
     # save vocab
     save_var('../docs/model/checkpoints/vocabulary_inv', vocabulary_inv)
     category = ['-1', '0', '1']
     # [0] -> 0
-    trn_labels = [yy[0] for yy in trn_labels]
-    print(Counter(trn_labels))
-
-    tst_labels = [yy[0] for yy in tst_labels]
+    print(Counter(labels))
     # save category
     save_var('../docs/model/checkpoints/category', category)
     # vectorize
     labelEncoder = preprocessing.label_binarize
-    trn_labels = labelEncoder(trn_labels, classes=category)
-    tst_labels = labelEncoder(tst_labels, classes=category)
+    _labels = labelEncoder(labels, classes=category)
+    _texts = np.array(texts)
+    # print(_labels[100:300])
+    # exit()
 
-    trn_text = np.array(trn_text)
-    tst_text = np.array(tst_text)
+    ind = np.arange(_texts.shape[0])
+    np.random.shuffle(ind)
+    ratio = 0.3
+    split_n = int(ratio * len(_texts))
+    trn_labels = _labels[ind[split_n:]]
+    trn_text = _texts[ind[split_n:]]
+    tst_labels = _labels[ind[:split_n]]
+    tst_text = _texts[ind[:split_n]]
+
     print('train data size : %d , test data size : %d' % (len(trn_labels),
                                                           len(tst_labels)))
     print('X sequence_length is : %d , Y dim : %d' % (trn_text.shape[1],
@@ -194,10 +212,10 @@ if __name__ == '__main__':
     pickle.dump(params, open('../docs/model/checkpoints/params', 'wb'))
     print(trn_text[0])
     print(trn_labels[0])
-    ratio = 0.4
+    ratio = 0.5
     valid_N = int(ratio * tst_text.shape[0])
     train_dataset = {'X': trn_text, 'Y': trn_labels}
     valid_dataset = {'X': tst_text[:valid_N], 'Y': tst_labels[:valid_N, :]}
     test_dataset = {'X': tst_text[valid_N:], 'Y': tst_labels[valid_N:, :]}
     # start train
-    train(train_dataset, valid_dataset, test_dataset, params, model_flag='deep_conv')
+    train(train_dataset, valid_dataset, test_dataset, params, model_flag='deep_lstm')

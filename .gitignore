@@ -102,7 +102,7 @@ ENV/
 
 # my data file
 *.csv
-*.DS_Store
+.DS_Store
 docs/ignore/*
 *.test
 *.xls

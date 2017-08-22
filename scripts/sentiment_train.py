@@ -78,6 +78,7 @@ def train(train_dataset,
         raise ValueError("Unknown model type")
     # complie model
     optimizer = RMSprop if 'lstm' in model_flag else Adagrad
+    pickle.dump(params, open('../docs/model/checkpoints/params', 'wb'))
     model.compile(
         loss=params['Y']['loss_func'],
         metrics=['accuracy'],
@@ -208,8 +209,7 @@ if __name__ == '__main__':
     params['X']['sequence_length'] = trn_text.shape[1]
     params['X']['vocab_size'] = len(vocabulary)
     params['Y']['dim'] = len(category)
-    print(json.dumps(params, indent=4))
-    pickle.dump(params, open('../docs/model/checkpoints/params', 'wb'))
+
     print(trn_text[0])
     print(trn_labels[0])
     ratio = 0.5

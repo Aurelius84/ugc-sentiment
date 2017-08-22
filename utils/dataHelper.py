@@ -603,7 +603,7 @@ def save_var(file_path, var):
 
 def load_var(file_path):
     with open(file_path, 'r') as f:
-        var = [x.strip('\n') for x in f.readlines()]
+        var = [x.decode('utf8').strip('\n') for x in f.readlines()]
         return var
 
 

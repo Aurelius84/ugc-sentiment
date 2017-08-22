@@ -6,11 +6,12 @@ import sys
 
 import jieba
 import numpy as np
-from utils.assemble import assemble
-from utils.dataHelper import load_var, pad_sentences
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
+
+from utils.assemble import assemble
+from utils.dataHelper import load_var, pad_sentences
 
 
 class sentiment(object):
@@ -33,7 +34,7 @@ class sentiment(object):
         3. return json data
         """
         process_data = self.process(datas)
-        probs = self.model.predict(process_data)
+        probs = self.model.predict(np.array(process_data))
         preds = np.argmax(probs, axis=1).flatten()
         # return result
         result = []
@@ -53,18 +54,26 @@ class sentiment(object):
     def process(self, datas):
         """
         1. segment using jieba
-        2. padding_word
-        3. transform word to word_index
+        2. transform word to word_index
+        3. padding_word
         """
+        if not isinstance(datas, list):
+            datas = [datas]
         self.seg_data = [jieba.lcut(data) for data in datas]
+        data = [[self.vocabulary[wd] for wd in sen if wd in self.vocabulary] for sen in self.seg_data]
         pad_data = pad_sentences(
-            self.seg_data,
-            padding_word="<PAD/>",
-            mode=self.params['sequence_length'])
-        pad_data = [[self.vocabulary[wd] for wd in sen] for sen in pad_data]
+            data,
+            padding_word=0,
+            mode=self.params['X']['sequence_length'])
 
         return pad_data
 
     @property
     def words(self):
         return self.seg_data
+
+
+if __name__ == '__main__':
+    senti = sentiment()
+    data = u"最近很破坏，很生气，怎么可以这么缺德。"
+    print(senti.predict(data))

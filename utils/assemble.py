@@ -148,7 +148,7 @@ def assemble_deep_lstm(params):
         # lstm_input = attention_3d_block(lstm_input, params['X']['sequence_length'], single_attention_vector=False)
         lstm_out = GRU(
             params['LSTM']['layer%s' % i]['cell'],
-            # recurrent_activation='relu',
+            # recurrent_activation='sigmoid',
             kernel_regularizer=l2(0.01),
             dropout=0.2,
             recurrent_dropout=0.2,
@@ -164,7 +164,7 @@ def assemble_deep_lstm(params):
     # last lstm
     lstm_out = GRU(
         params['LSTM']['layer%s' % lstm_layer_num]['cell'],
-        # recurrent_activation='relu',
+        # recurrent_activation='sigmoid',
         kernel_regularizer=l2(0.01),
         # kernel_initializer='lecun_normal',
         # recurrent_initializer='glorot_uniform',

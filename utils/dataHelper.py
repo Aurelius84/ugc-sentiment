@@ -714,15 +714,14 @@ class cnn_data_helper(object):
         # 保存label对应one_hot向量
         self.label_dict = dict(zip(self.labels, one_hot))
 
-        train_x_raw = self.pad_sentences(
-            train_x_raw, forced_sequence_length=padding_mod)
-
         # self.build_vocab(train_x_raw)
         # x 是文档-词向量矩阵 固定维度
-        train_x = np.array([[self.vocabulary[word] if word in self.vocabulary else 0 for word in doc_words]
-                            for doc_words in train_x_raw])
-
+        train_x_raw = [[self.vocabulary[word] for word in doc_words if word in self.vocabulary] for doc_words in train_x_raw]
+        train_x = self.pad_sentences(
+            train_x_raw, padding_word=0, forced_sequence_length=padding_mod)
         y_raw = [self.label_dict[label] for label in train_y_raw]
+
+        train_x = np.array(train_x)
         train_y = np.array(y_raw)
 
         return train_x, train_y

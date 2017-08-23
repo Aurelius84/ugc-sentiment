@@ -2,7 +2,7 @@
 
 iter:
     batch_size:    8
-    epoch:         40
+    epoch:         5
     learn_rate:    0.01
     model_dir:     '../docs/model/checkpoints/'
     model_name:    'default_best.h5'
@@ -42,6 +42,11 @@ Conv1D:
 LSTM:
     layer1:
         cell:       8
+        return_sequences:   true
+        # batch_norm: {momentum: 0.9}
+      # dropout:       0.3
+    layer1:
+        cell:       16
         return_sequences:   true
         # batch_norm: {momentum: 0.9}
       # dropout:       0.3

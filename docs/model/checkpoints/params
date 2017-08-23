@@ -23,13 +23,13 @@ p10
 (dp11
 S'sequence_length'
 p12
-I13
+I100
 sS'embedding_dim'
 p13
 I8
 sS'vocab_size'
 p14
-I16099
+I43224
 ssS'LSTM'
 p15
 (dp16
@@ -47,7 +47,7 @@ p21
 (dp22
 S'cell'
 p23
-I8
+I16
 sS'return_sequences'
 p24
 I01
@@ -59,7 +59,7 @@ p27
 F0.01
 sS'epoch'
 p28
-I40
+I5
 sS'model_dir'
 p29
 S'../docs/model/checkpoints/'

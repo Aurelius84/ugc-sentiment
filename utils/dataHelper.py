@@ -11,9 +11,9 @@
 @time: 17/7/7 下午15:21
 """
 import logging
-import re
 import time
-from collections import Counter, defaultdict
+from math import ceil
+from collections import Counter
 from multiprocessing.dummy import Pool as ThreadPool
 
 import jieba
@@ -594,6 +594,25 @@ def loadStopWords(file_name):
             ['', stop_words.add(word)][word != '']
     return stop_words
 
+def clean_str(s):
+    '''
+    字符串清洗
+    :param s:原始字符串
+    :return:
+    '''
+
+    pattern = r"[~（）&:,!！﹗?'`%？#.、。，+*/“”•－：;；·—．-]"
+    s = re.sub(r"#.*#|＃.*＃", "", str(s))
+    s = re.sub(r"【.*?】", "", s)
+    s = re.sub(r"@.*?@", "", s)
+    s = re.sub(r"[0-9]+", "Number", s)
+    s = re.sub(r"\(\)|（）|__*", "Blank", s)
+    s = re.sub(pattern, "", s)
+    s = re.sub("nbsp;|amp;|quot;|qpos;", "", s)
+    s = re.sub(r"\u2022", "", s)
+    s = re.sub(r"大同区同福社区|青年之声", "", s)
+
+    return s.strip()
 
 def save_var(file_path, var):
     with open(file_path, 'w') as f:
@@ -610,6 +629,236 @@ def load_var(file_path):
 def is_uchar(uchar):
     """判断一个unicode是否是汉字"""
     return True if uchar >= u'\u4e00' and uchar <= u'\u9fa5' else False
+
+
+def contain(_list, _string):
+    '''
+    检测字符串是否包含某种字符
+    :param _list: 字符模式
+    :param _string: 匹配字符串
+    :return: T or F
+    '''
+    for _str in _list:
+        if _string.find(_str) != -1:
+            return True
+    return False
+
+
+def wordToVec(word, model):
+    '''
+    获取词向量
+    :param word: utf-8格式 词
+    :return: 词向量一维矩阵
+            [0.1,0.3,....]
+    '''
+    try:
+        return model[word]
+    except KeyError:
+        print('no key of {0}'.format(word))
+        return np.zeros([1, 100])
+
+
+def loadSentimentVector(file_name):
+    """
+    Load sentiment vector
+    [Surprise, Sorrow, Love, Joy, Hate, Expect, Anxiety, Anger]
+    """
+    contents = [
+        line.strip('\n').split() for line in open(file_name, 'r').readlines()
+    ]
+    sentiment_dict = {
+        line[0].decode('utf-8'): [float(w) for w in line[1:]]
+        for line in contents
+    }
+    return sentiment_dict
+
+
+class cnn_data_helper(object):
+    """
+    CNN_LSTM 专属的数据清洗流程
+    流程包括如下:
+            1.labels对角向量化
+            2.构造labels映射字典
+            3.原始文本padding长度fixing处理
+            4.文本向量化
+    """
+
+    def __init__(self, word2vec_model_dir='../docs/sentiment/extend_dict.txt'):
+        '''
+        初始化
+
+        :param word2vec_model_dir: word2vec训练的bin文件路径
+        :return:
+        '''
+
+        self.word2vec_model = loadSentimentVector(word2vec_model_dir)
+        self.vocabulary_inv = self.word2vec_model.keys()
+        self.vocabulary_inv = ["<PAD/>"] + self.vocabulary_inv
+        self.vocabulary = {word: ind for ind, word in enumerate(self.vocabulary_inv)}
+
+    def fit(self, train_x_raw, train_y_raw, padding_mod='max'):
+        '''
+        训练集空间向量化
+
+        :param train_x_raw:训练文档-词集
+        :param train_y_raw:训练文档标签集
+        :return:
+        '''
+
+        # labels集合
+        self.labels = list(set(train_y_raw))
+        num_labels = len(self.labels)
+        # 转化为one_hot向量
+        one_hot = np.zeros((num_labels, num_labels), int)
+        np.fill_diagonal(one_hot, 1)
+        # 保存label对应one_hot向量
+        self.label_dict = dict(zip(self.labels, one_hot))
+
+        train_x_raw = self.pad_sentences(
+            train_x_raw, forced_sequence_length=padding_mod)
+
+        # self.build_vocab(train_x_raw)
+        # x 是文档-词向量矩阵 固定维度
+        train_x = np.array([[self.vocabulary[word] if word in self.vocabulary else 0 for word in doc_words]
+                            for doc_words in train_x_raw])
+
+        y_raw = [self.label_dict[label] for label in train_y_raw]
+        train_y = np.array(y_raw)
+
+        return train_x, train_y
+
+    def load_embeddings(self, dim=100):
+        '''
+        加载词典embedding向量
+
+        :return:
+        '''
+        word_embeddings = {}
+        for word in self.vocabulary:
+            try:
+                word_embeddings[word] = self.word2vec_model[word]
+            except:
+                word_embeddings[word] = np.random.uniform(-0.1, 0.1, dim)
+        return word_embeddings
+
+    def pad_sentences(self,
+                      docs_words,
+                      padding_word="<PAD/>",
+                      forced_sequence_length='average'):
+        '''
+        归整文档词序列长度
+
+        :param docs_words:文档-词集
+        :param padding_word: 默认添加的词
+        :param forced_sequence_length: 训练时制定的词序列长度, int or str 'max' and 'average'
+        :return: pad 后的文档-词集
+        '''
+        """Pad setences during training or prediction"""
+        if forced_sequence_length == 'average':
+            sequence_length = [len(doc_word) for doc_word in docs_words]
+            self.sequence_length = int(
+                1.3 * sum(sequence_length) / len(sequence_length))
+
+        elif forced_sequence_length == 'max':
+            self.sequence_length = max(
+                len(doc_word) for doc_word in docs_words)
+        else:
+            self.sequence_length = int(forced_sequence_length)
+
+        # 存放 pad后的docs
+        padded_sentences = []
+        for doc_index in range(len(docs_words)):
+            doc_words = docs_words[doc_index]
+            num_padding = self.sequence_length - len(doc_words)
+
+            if num_padding < 0:  # Prediction: cut off the sentence if it is longer than the sequence length
+                # logging.info(
+                #     'This sentence has to be cut off because it is longer than trained sequence length')
+                padded_sentence = doc_words[0:self.sequence_length]
+            else:
+                # 训练语句长度不够的话,补全
+                padded_sentence = doc_words + [padding_word] * num_padding
+            padded_sentences.append(padded_sentence)
+        return padded_sentences
+
+    def build_vocab(self, train_x_raw_padded):
+        '''
+        构建总词典集词典词序映射表
+
+        :param train_x_raw_padded: 文档-fixed词集
+        :return:
+        '''
+
+        word_counts = Counter(itertools.chain(*train_x_raw_padded))
+        self.vocabulary_inv = [word[0] for word in word_counts.most_common()]
+        self.vocabulary = {
+            word: index
+            for index, word in enumerate(self.vocabulary_inv)
+        }
+
+    def batch_iter(self, data, batch_size, num_epochs, shuffle=True):
+        '''
+        数据batch随机化
+
+        :param data: list(zip(x_train, y_train))
+        :param batch_size:
+        :param num_epochs:
+        :param shuffle:
+        :return:
+        '''
+        data = np.array(data)
+        data_size = len(data)
+        num_batches_per_epoch = int(ceil(float(data_size) / batch_size))
+
+        for epoch in range(num_epochs):
+            if shuffle:
+                shuffle_indices = np.random.permutation(np.arange(data_size))
+                shuffled_data = data[shuffle_indices]
+            else:
+                shuffled_data = data
+
+            for batch_num in range(num_batches_per_epoch):
+                start_index = batch_num * batch_size
+                end_index = min((batch_num + 1) * batch_size, data_size)
+                yield shuffled_data[start_index:end_index]
+
+    def transforms(self,
+                   test_x_raw,
+                   padding_word="<PAD/>",
+                   forced_sequence_length=None):
+        '''
+        测试文本向量化
+        :param test_x_raw: 测试文本 str or list
+        :return:
+        '''
+        if not isinstance(test_x_raw[0], list):
+            test_x_raw = [test_x_raw]
+
+        test_x_raw = self.pad_sentences(
+            test_x_raw,
+            padding_word=padding_word,
+            forced_sequence_length=forced_sequence_length)
+        # x 是文档-词向量矩阵 固定维度
+        train_x = np.array([[self.vocabulary[word] for word in doc_words]
+                            for doc_words in test_x_raw])
+
+        return train_x
+
+    @property
+    def _vocabulary(self):
+        return self.vocabulary
+
+    @property
+    def _vocabulary_inv(self):
+        return self.vocabulary_inv
+
+    @property
+    def _labels(self):
+        return self.labels
+
+    @property
+    def _sequence_length(self):
+        return self.sequence_length
 
 
 if __name__ == '__main__':

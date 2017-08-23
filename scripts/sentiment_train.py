@@ -153,14 +153,14 @@ def loadSentimentVector(file_name):
 
 if __name__ == '__main__':
     # load sentiment vector
-    sentiment_dict = loadSentimentVector('../docs/kw_dict.txt')
+    sentiment_dict = loadSentimentVector('../docs/sentiment/extend_dict.txt')
     # use sentiment_dict as vocabulary
     vocabulary_inv = ["<PAD/>"] + list(sentiment_dict.keys())
     vocabulary = {x: i for i, x in enumerate(vocabulary_inv)}
 
     # Load the datasets
     texts, labels, vocabulary, vocabulary_inv = load_data(
-        '../docs/keySentence.txt',
+        '../docs/sentiment/keySentence.txt',
         use_tst=False,
         lbl_text_index=[0, 1],
         split_tag='|',
@@ -173,10 +173,11 @@ if __name__ == '__main__':
     labels = [x[0] for x in labels]
     # filter by sentiment_dict
     texts = [filter(lambda x: x != 0, content) for content in texts]
-    print(texts[:3])
+
     # padding
-    texts = pad_sentences(texts, padding_word=0, mode='average')
-    texts, labels = corpus_balance(texts, labels, mod='average')
+    texts = pad_sentences(texts, padding_word=0, mode=100)
+    print(Counter(labels))
+    texts, labels = corpus_balance(texts, labels, mod='max')
     # save vocab
     save_var('../docs/model/checkpoints/vocabulary_inv', vocabulary_inv)
     category = ['-1', '0', '1']

@@ -32,11 +32,11 @@ def _find_packages(where='.', exclude=()):
             out = [item for item in out if not fnmatchcase(item, pat)]
 
 
-# PUBLISH_CMD = 'python setup.py register sdist upload'
-#
-# if 'publish' in sys.argv:
-#     status = subprocess.call(PUBLISH_CMD, shell=True)
-#     sys.exit(status)
+PUBLISH_CMD = 'python setup.py register sdist upload'
+
+if 'publish' in sys.argv:
+    status = subprocess.call(PUBLISH_CMD, shell=True)
+    sys.exit(status)
 
 
 setup(

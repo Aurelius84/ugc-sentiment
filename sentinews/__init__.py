@@ -8,13 +8,13 @@ from . import utils
 import jieba
 import numpy as np
 
-DOCS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'docs')
+MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'docs/model')
 
 
 class SentiNews(object):
     def __init__(self,
                  model_flag='deep_lstm',
-                 model_dir=DOCS_DIR + '../docs/model/'):
+                 model_dir=MODEL_DIR):
         self.params = pickle.load(open(model_dir + '/params', 'rb'))
         self.vocabulary_inv = utils.dataHelper.load_var(
             model_dir + '/vocabulary_inv')

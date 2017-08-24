@@ -41,7 +41,7 @@ if 'publish' in sys.argv:
 
 setup(
     name="sentinews",
-    version="0.1.1",
+    version="0.1.2",
     author="Liujie zhang",
     author_email='liujiezhangbupt@gmail.com',
     description="sentiment classifier for news trained by LSTM.",
@@ -49,7 +49,7 @@ setup(
     url="https://github.com/KillersDeath/the_machine",
     packages=find_packages(exclude=('test*', )),
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'Programming Language :: Python',
         "Programming Language :: Python :: 2.7",

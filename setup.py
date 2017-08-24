@@ -40,10 +40,12 @@ if 'publish' in sys.argv:
 
 setup(
     name="sentinews",
-    version="0.0.1",
+    version="0.0.3",
     author="Liujie zhang",
     author_email='liujiezhangbupt@gmail.com',
     description="sentiment classifier for news trained by LSTM.",
+    download_url='https://github.com/KillersDeath/the_machine/archive/v0.0.3.tar.gz',
+    keywords=['sentiment', 'LSTM'],
     license="MIT",
     url="https://github.com/KillersDeath/the_machine",
     packages=find_packages(exclude=('test*', )),

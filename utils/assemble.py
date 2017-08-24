@@ -171,6 +171,17 @@ def assemble_deep_lstm(params):
         dropout=0.2,
         recurrent_dropout=0.2,
         )(lstm_out)
+
+    # batch_norm
+    if 'batch_norm' in params['LSTM']['layer%s' % lstm_layer_num]:
+        kwargs = params['LSTM']['layer%s' % lstm_layer_num]['batch_norm']
+        lstm_out = BatchNormalization(**kwargs)(lstm_out)
+    # dropout
+    if 'dropout' in params['LSTM']['layer%s' % lstm_layer_num]:
+        lstm_out = Dropout(
+            params['LSTM']['layer%s' % lstm_layer_num]['dropout'],
+            name='H')(lstm_out)
+
     # ATTENTION PART STARTS HERE
     # attention_probs = Dense(
     #     params['LSTM']['layer%s' % lstm_layer_num]['cell'],
@@ -182,15 +193,6 @@ def assemble_deep_lstm(params):
     #     name='attention_mul',
     #     mode='mul')
     # ATTENTION PART FINISHES HERE
-    # batch_norm
-    if 'batch_norm' in params['LSTM']['layer%s' % lstm_layer_num]:
-        kwargs = params['LSTM']['layer%s' % lstm_layer_num]['batch_norm']
-        lstm_out = BatchNormalization(**kwargs)(lstm_out)
-    # dropout
-    if 'dropout' in params['LSTM']['layer%s' % lstm_layer_num]:
-        lstm_out = Dropout(
-            params['LSTM']['layer%s' % lstm_layer_num]['dropout'],
-            name='H')(lstm_out)
 
     # Y output
     kwargs = params['Y']['kwargs'] if 'kwargs' in params['Y'] else {}

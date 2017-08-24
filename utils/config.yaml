@@ -1,8 +1,8 @@
 # params config
 
 iter:
-    batch_size:    8
-    epoch:         5
+    batch_size:    48
+    epoch:         15
     learn_rate:    0.01
     model_dir:     '../docs/model/checkpoints/'
     model_name:    'default_best.h5'
@@ -43,17 +43,17 @@ LSTM:
     layer1:
         cell:       8
         return_sequences:   true
-        # batch_norm: {momentum: 0.9}
-      # dropout:       0.3
-    layer1:
+        batch_norm: {momentum: 0.9}
+        # dropout:       0.4
+    layer2:
         cell:       16
         return_sequences:   true
-        # batch_norm: {momentum: 0.9}
-      # dropout:       0.3
-    layer2:
+        batch_norm: {momentum: 0.9}
+        # dropout:       0.3
+    layer3:
         cell:       8
         return_sequences:   false
-        # batch_norm: {momentum: 0.9}
+        batch_norm: {momentum: 0.9}
         # dropout:       0.3
     # layer3:
     #     cell:       32
@@ -69,4 +69,4 @@ Y:
     loss_func:  'categorical_crossentropy'
     W_regularizer: 0.1
     activity_reg: {l1: 0.1}
-    # batch_norm: {momentum: 0.9}
+    batch_norm: {momentum: 0.9}

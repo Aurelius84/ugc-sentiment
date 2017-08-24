@@ -35,6 +35,9 @@ class sentiment(object):
         """
         process_data = self.process(datas)
         probs = self.model.predict(np.array(process_data))
+        probs = probs * (probs > 0.)
+        probs[:, 1] += 0.6
+        probs[:, 2] -= 0.3
         preds = np.argmax(probs, axis=1).flatten()
         # return result
         result = []
@@ -74,6 +77,19 @@ class sentiment(object):
 
 
 if __name__ == '__main__':
+    from sklearn.metrics import classification_report
     senti = sentiment()
     data = u"最近很破坏，很生气，怎么可以这么缺德。"
-    print(senti.predict(data))
+    test_datas = open('../docs/sentiment/keySentence.txt', 'r').readlines()
+    cate = {'-1': u'消极', '0': u'中性', '1': u'积极'}
+    conts = [x.decode('utf8').split('|')[1] for x in test_datas]
+    labels = [cate[x.split('|')[0]] for x in test_datas]
+    result = senti.predict(test_datas)
+    pre = [res['labels'].decode('utf-8') for res in result]
+    for i in range(30):
+        print(conts[i])
+        print('target: %s' % labels[i])
+        print('predict: %s' % pre[i])
+        s = ['%s: %s' % (result[i]['probs'].keys()[j], result[i]['probs'].values()[j]) for j in range(3)]
+        print(' '.join(s))
+    print(classification_report(labels, pre))

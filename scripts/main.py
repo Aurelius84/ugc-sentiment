@@ -42,7 +42,33 @@ def loadSentimentVector(file_name):
     return sentiment_dict
 
 
+def corpus():
+    from xml.etree import ElementTree as ET
+    cate = {u"积极": '1', u"中性": '0', u"消极": '-1'}
+
+    dir_name = '/home/kevin/Documents/emocorpus/CEC_emotionCoprus/'
+    file_list = os.listdir(dir_name)
+    N = len(file_list)
+    with open('../docs/sentiment/cec.txt', 'w') as f:
+        for cnt, file_name in enumerate(file_list):
+            file_path = os.path.join(dir_name, file_name)
+            print('%s / %s --- %s' % (cnt, N, file_name))
+            content = open(file_path, 'r').read().decode('utf8')
+            root = ET.fromstring(content)
+            sentences = root.getiterator("sentence")
+            for sent in sentences:
+                try:
+                    s = sent.attrib['S']
+                    l = sent.getiterator('Polarity')[0].text
+                    f.writelines('%s|%s\n' % (cate[l], s))
+                except Exception as e:
+                    print(e)
+                    print(s)
+
+
 if __name__ == '__main__':
+    corpus()
+    exit()
     # load sentiment vector
     sentiment_dict = loadSentimentVector('../docs/sentiment/extend_dict.txt')
     # use sentiment_dict as vocabulary
@@ -57,7 +83,7 @@ if __name__ == '__main__':
     labels = [y[0] for y in labels]
     lb_wd = ['Surprise', 'Sorrow', 'Love', 'Joy', 'Hate', 'Expect', 'Anxiety', 'Anger']
     average = []
-    ind = 5
+    ind = labels.index('-1')
     for wd in texts[ind]:
         if wd in sentiment_dict:
             s = ['%s:%.3f' % (lb_wd[i], sentiment_dict[wd][i]) for i in range(6)]

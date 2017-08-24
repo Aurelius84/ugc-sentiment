@@ -160,7 +160,7 @@ if __name__ == '__main__':
 
     # Load the datasets
     texts, labels, vocabulary, vocabulary_inv = load_data(
-        '../docs/sentiment/keySentence.txt',
+        '../docs/sentiment/cec.txt',
         use_tst=False,
         lbl_text_index=[0, 1],
         split_tag='|',
@@ -177,7 +177,7 @@ if __name__ == '__main__':
     # padding
     texts = pad_sentences(texts, padding_word=0, mode=100)
     print(Counter(labels))
-    texts, labels = corpus_balance(texts, labels, mod='max')
+    texts, labels = corpus_balance(texts, labels, mod='average')
     # save vocab
     save_var('../docs/model/checkpoints/vocabulary_inv', vocabulary_inv)
     category = ['-1', '0', '1']

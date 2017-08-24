@@ -78,7 +78,7 @@ def train(train_dataset,
         raise ValueError("Unknown model type")
     # complie model
     optimizer = RMSprop if 'lstm' in model_flag else Adagrad
-    pickle.dump(params, open('../docs/model/checkpoints/params.pkl', 'wb'))
+    pickle.dump(params, open('../docs/model/params', 'wb'))
     model.compile(
         loss=params['Y']['loss_func'],
         metrics=['accuracy'],
@@ -179,12 +179,12 @@ if __name__ == '__main__':
     print(Counter(labels))
     texts, labels = corpus_balance(texts, labels, mod='average')
     # save vocab
-    save_var('../docs/model/checkpoints/vocabulary_inv.txt', vocabulary_inv)
+    save_var('../docs/model/vocabulary_inv', vocabulary_inv)
     category = ['-1', '0', '1']
     # [0] -> 0
     print(Counter(labels))
     # save category
-    save_var('../docs/model/checkpoints/category.txt', category)
+    save_var('../docs/model/category', category)
     # vectorize
     labelEncoder = preprocessing.label_binarize
     _labels = labelEncoder(labels, classes=category)

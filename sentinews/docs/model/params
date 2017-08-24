@@ -95,7 +95,7 @@ p44
 I15
 sS'model_dir'
 p45
-S'../docs/model/checkpoints/'
+S'../docs/model/'
 p46
 sS'model_type'
 p47

@@ -15,9 +15,9 @@ class SentiNews(object):
     def __init__(self,
                  model_flag='deep_lstm',
                  model_dir=DOCS_DIR + '../docs/model/checkpoints'):
-        self.params = pickle.load(open(model_dir + '/params', 'rb'))
+        self.params = pickle.load(open(model_dir + '/params.pkl', 'rb'))
         self.vocabulary_inv = utils.dataHelper.load_var(
-            model_dir + '/vocabulary_inv')
+            model_dir + '/vocabulary_inv.txt')
         self.vocabulary = {wd: i for i, wd in enumerate(self.vocabulary_inv)}
         self.labels = ["消极", "中性", "积极"]
         # assemble model

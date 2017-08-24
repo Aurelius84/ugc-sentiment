@@ -18,8 +18,8 @@ class sentiment(object):
     def __init__(self,
                  model_flag='deep_lstm',
                  model_dir='../docs/model/checkpoints'):
-        self.params = pickle.load(open(model_dir + '/params', 'rb'))
-        self.vocabulary_inv = load_var(model_dir + '/vocabulary_inv')
+        self.params = pickle.load(open(model_dir + '/params.pkl', 'rb'))
+        self.vocabulary_inv = load_var(model_dir + '/vocabulary_inv.txt')
         self.vocabulary = {wd: i for i, wd in enumerate(self.vocabulary_inv)}
         self.labels = ["消极", "中性", "积极"]
         # assemble model

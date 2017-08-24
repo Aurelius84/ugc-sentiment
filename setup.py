@@ -41,7 +41,7 @@ if 'publish' in sys.argv:
 
 setup(
     name="sentinews",
-    version="0.1.0",
+    version="0.1.1",
     author="Liujie zhang",
     author_email='liujiezhangbupt@gmail.com',
     description="sentiment classifier for news trained by LSTM.",
@@ -54,6 +54,6 @@ setup(
         'Programming Language :: Python',
         "Programming Language :: Python :: 2.7",
     ],
-    # package_data={'': ['*.md', '*.h5', '*.txt']},
-    # include_package_data=True,
+    package_data={'': ['*.md', '*.h5', '*.txt', '*.pkl']},
+    include_package_data=True,
 )

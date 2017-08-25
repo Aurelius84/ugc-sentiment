@@ -19,9 +19,9 @@ class SentiNews(object):
         self.vocabulary_inv = utils.dataHelper.load_var(
             model_dir + '/vocabulary_inv')
         self.vocabulary = {wd: i for i, wd in enumerate(self.vocabulary_inv)}
-        self.labels = ["消极", "中性", "积极"]
+        self.labels = [u"消极", u"中性", u"积极"]
         # assemble model
-        self.model = utils.assemble(model_flag, self.params)
+        self.model = utils.assemble.assemble(model_flag, self.params)
         # load trained weights
         self.model.load_weights(model_dir + '/default_best.h5')
 
@@ -33,9 +33,9 @@ class SentiNews(object):
         """
         process_data = self.process(datas)
         probs = self.model.predict(np.array(process_data))
-        probs = probs * (probs > 0.)
-        probs[:, 1] += 0.6
-        probs[:, 2] -= 0.3
+        # probs = probs * (probs > 0.)
+        # probs[:, 1] += 0.6
+        # probs[:, 2] -= 0.3
         preds = np.argmax(probs, axis=1).flatten()
         # return result
         result = []
@@ -47,7 +47,7 @@ class SentiNews(object):
             }
             result.append(json_data)
         # single data return json
-        if len(datas) == 1:
+        if not isinstance(datas, list):
             return result[0]
         # multi data return list of json
         return result

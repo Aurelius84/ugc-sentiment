@@ -1,4 +1,4 @@
-# the_machine
+# sentinews
 Machine built to monitor public opinion. Models based on `stacked LSTM`(three layers)  was trained by `written language` from blog and article.
 
 

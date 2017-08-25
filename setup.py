@@ -40,7 +40,7 @@ if 'publish' in sys.argv:
 
 setup(
     name="sentinews",
-    version="0.0.4",
+    version="0.4.0",
     author="Liujie zhang",
     author_email='liujiezhangbupt@gmail.com',
     description="sentiment classifier for news trained by LSTM.",

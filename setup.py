@@ -40,11 +40,10 @@ if 'publish' in sys.argv:
 
 setup(
     name="sentinews",
-    version="0.0.3",
+    version="0.0.4",
     author="Liujie zhang",
     author_email='liujiezhangbupt@gmail.com',
     description="sentiment classifier for news trained by LSTM.",
-    download_url='https://github.com/KillersDeath/the_machine/archive/v0.0.3.tar.gz',
     keywords=['sentiment', 'LSTM'],
     license="MIT",
     url="https://github.com/KillersDeath/the_machine",
@@ -56,14 +55,15 @@ setup(
         "Programming Language :: Python :: 2.7",
     ],
     include_package_data=True,
-    package_data={
-        'docs/model': [
-            'category',
-            'params',
-            'vocabulary_inv',
-            'default_best.h5'
-            ],
-        'utils': [
-            'config.yaml',
-            ]
-    }, )
+    # package_data={
+    #     'docs/model': [
+    #         'category',
+    #         'params',
+    #         'vocabulary_inv',
+    #         'default_best.h5'
+    #         ],
+    #     'utils': [
+    #         'config.yaml',
+    #         ]
+    # },
+    )

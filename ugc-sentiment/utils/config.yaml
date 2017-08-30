@@ -1,8 +1,8 @@
 # params config
 
 iter:
-    batch_size:    48
-    epoch:         15
+    batch_size:    64
+    epoch:         6
     learn_rate:    0.01
     model_dir:     '../docs/model/'
     model_name:    'default_best.h5'
@@ -41,17 +41,17 @@ Conv1D:
         batch_norm: {momentum: 0.9}
 LSTM:
     layer1:
-        cell:       8
+        cell:       64
         return_sequences:   true
         batch_norm: {momentum: 0.9}
         # dropout:       0.4
+    # layer2:
+    #     cell:       16
+    #     return_sequences:   true
+    #     batch_norm: {momentum: 0.9}
+    #     dropout:       0.3
     layer2:
-        cell:       16
-        return_sequences:   true
-        batch_norm: {momentum: 0.9}
-        # dropout:       0.3
-    layer3:
-        cell:       8
+        cell:       32
         return_sequences:   false
         batch_norm: {momentum: 0.9}
         # dropout:       0.3

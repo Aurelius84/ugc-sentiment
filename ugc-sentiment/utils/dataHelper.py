@@ -275,7 +275,7 @@ def load_data_and_labels(file_path,
     """
 
     # Load data from files
-    raw_data = list(open(file_path, 'r').readlines())
+    raw_data = [x.decode('utf-8') for x in open(file_path, 'r').readlines()]
     # parse label
     labels = [
         data.strip('\n').split(split_tag)[lbl_text_index[0]]
@@ -619,7 +619,7 @@ def clean_str(s):
 
 def save_var(file_path, var):
     with open(file_path, 'w') as f:
-        var = ['%s\n' % x for x in var]
+        var = ['%s\n' % x.encode('utf-8') for x in var]
         f.writelines(var)
 
 

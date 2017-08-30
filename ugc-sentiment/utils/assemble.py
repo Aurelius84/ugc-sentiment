@@ -3,7 +3,7 @@ Utility functions for constructing MLC models.
 """
 from keras.layers import Conv1D, Embedding, Flatten, MaxPool1D
 from keras.layers import Dense, Dropout, Input, Activation, Permute, Reshape, Lambda, RepeatVector, merge
-from keras.layers import ActivityRegularization
+from keras.layers import ActivityRegularization, Bidirectional
 from keras.layers.normalization import BatchNormalization
 from keras.regularizers import l2
 from keras.layers import GRU
@@ -146,13 +146,13 @@ def assemble_deep_lstm(params):
     for i in range(1, lstm_layer_num):
         lstm_input = embedding if i == 1 else lstm_out
         # lstm_input = attention_3d_block(lstm_input, params['X']['sequence_length'], single_attention_vector=False)
-        lstm_out = GRU(
+        lstm_out = Bidirectional(GRU(
             params['LSTM']['layer%s' % i]['cell'],
             # recurrent_activation='sigmoid',
             kernel_regularizer=l2(0.01),
             dropout=0.2,
             recurrent_dropout=0.2,
-            return_sequences=True)(lstm_input)
+            return_sequences=True))(lstm_input)
         # batch_norm
         if 'batch_norm' in params['LSTM']['layer%s' % i]:
             kwargs = params['LSTM']['layer%s' % i]['batch_norm']
@@ -162,7 +162,7 @@ def assemble_deep_lstm(params):
             lstm_out = Dropout(
                 params['LSTM']['layer%s' % i]['dropout'])(lstm_out)
     # last lstm
-    lstm_out = GRU(
+    lstm_out = Bidirectional(GRU(
         params['LSTM']['layer%s' % lstm_layer_num]['cell'],
         # recurrent_activation='sigmoid',
         kernel_regularizer=l2(0.01),
@@ -170,7 +170,7 @@ def assemble_deep_lstm(params):
         # recurrent_initializer='glorot_uniform',
         dropout=0.2,
         recurrent_dropout=0.2,
-        )(lstm_out)
+        ))(lstm_out)
 
     # batch_norm
     if 'batch_norm' in params['LSTM']['layer%s' % lstm_layer_num]:

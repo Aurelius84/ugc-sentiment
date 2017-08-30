@@ -54,16 +54,5 @@ setup(
         'Programming Language :: Python',
         "Programming Language :: Python :: 2.7",
     ],
-    include_package_data=True,
-    # package_data={
-    #     'docs/model': [
-    #         'category',
-    #         'params',
-    #         'vocabulary_inv',
-    #         'default_best.h5'
-    #         ],
-    #     'utils': [
-    #         'config.yaml',
-    #         ]
-    # },
+    include_package_data=True
     )

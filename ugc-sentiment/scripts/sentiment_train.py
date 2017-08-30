@@ -24,20 +24,17 @@ from sklearn.metrics import classification_report
 
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.optimizers import Adagrad, RMSprop
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(BASE_DIR)
+
+sys.path.append('..')
 from utils.assemble import assemble
 from utils.dataHelper import load_data, save_var, corpus_balance, pad_sentences
-
-reload(sys)
-sys.setdefaultencoding('utf8')
 
 
 def train(train_dataset,
           valid_dataset,
           test_dataset,
           params,
-          model_flag='deep_conv'):
+          model_flag='deep_lstm'):
 
     # Assemble and compile the model
     model = assemble(model_flag, params)
@@ -46,18 +43,6 @@ def train(train_dataset,
     model_type = params['iter']['model_type']
     print("Model type is", model_type)
     if model_type == "CNN-non-static" or model_type == "CNN-static":
-        # embedding_weights = train_word2vec(
-        #     np.vstack((valid_dataset['X'], test_dataset['X'])),
-        #     vocabulary_inv,
-        #     num_features=params['X']['embedding_dim'],
-        #     min_word_count=1,
-        #     context=5)
-        # embedding_weights = [np.ones((len(vocabulary_inv), params['X']['embedding_dim']))]
-        # for i, w in enumerate(vocabulary_inv):
-        #     if w in sentiment_dict:
-        #         embedding_weights[0][i] = np.dot(np.array(sentiment_dict[w]), embedding_weights[0][i])
-        #     else:
-        #         embedding_weights[0][i] = np.dot(np.random.uniform(0, 0.01, 6), embedding_weights[0][i])
         embedding_weights = [
             np.array([
                 np.array(sentiment_dict[w]) if w in sentiment_dict else
@@ -160,12 +145,12 @@ if __name__ == '__main__':
 
     # Load the datasets
     texts, labels, vocabulary, vocabulary_inv = load_data(
-        '../docs/sentiment/cec.txt',
+        '../docs/sentiment/data.vocab',
         use_tst=False,
         lbl_text_index=[0, 1],
-        split_tag='|',
+        split_tag='@@@',
         padding_mod='max',
-        use_jieba_segment=True,
+        use_jieba_segment=False,
         vocabulary=vocabulary,
         vocabulary_inv=vocabulary_inv
         )
@@ -175,12 +160,12 @@ if __name__ == '__main__':
     texts = [filter(lambda x: x != 0, content) for content in texts]
 
     # padding
-    texts = pad_sentences(texts, padding_word=0, mode=100)
+    # texts = pad_sentences(texts, padding_word=0, mode=100)
     print(Counter(labels))
-    texts, labels = corpus_balance(texts, labels, mod='average')
+    # texts, labels = corpus_balance(texts, labels, mod='average')
     # save vocab
     save_var('../docs/model/vocabulary_inv', vocabulary_inv)
-    category = ['-1', '0', '1']
+    category = ['1', '2', '3', '4', '5']
     # [0] -> 0
     print(Counter(labels))
     # save category

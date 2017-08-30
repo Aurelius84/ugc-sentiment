@@ -160,7 +160,7 @@ if __name__ == '__main__':
     texts = [filter(lambda x: x != 0, content) for content in texts]
 
     # padding
-    # texts = pad_sentences(texts, padding_word=0, mode=100)
+    texts = pad_sentences(texts, padding_word=0, mode=100)
     print(Counter(labels))
     # texts, labels = corpus_balance(texts, labels, mod='average')
     # save vocab

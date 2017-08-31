@@ -2,6 +2,7 @@
 import os
 import sys
 import subprocess
+import ugc_sentiment
 try:
     from setuptools import setup, find_packages
 except ImportError:
@@ -39,14 +40,14 @@ if 'publish' in sys.argv:
     sys.exit(status)
 
 setup(
-    name="sentinews",
-    version="0.4.0",
+    name="ugc-sentiment",
+    version=ugc_sentiment.__version__,
     author="Liujie zhang",
     author_email='liujiezhangbupt@gmail.com',
-    description="sentiment classifier for news trained by LSTM.",
-    keywords=['sentiment', 'LSTM'],
+    description="sentiment classifier for ugc comment trained by LSTM with attention machanism.",
+    keywords=['sentiment', 'LSTM', 'ugc', 'attention'],
     license="MIT",
-    url="https://github.com/KillersDeath/the_machine",
+    url="https://github.com/KillersDeath/ugc-sentiment",
     packages=find_packages(exclude=('test*', )),
     classifiers=[
         'Development Status :: 3 - Alpha',

@@ -1,4 +1,4 @@
 include README.md
 
-recursive-include sentinews/utils *.yaml
-recursive-include sentinews/docs/model *
+recursive-include ugc_sentiment/utils *.yaml
+recursive-include ugc_sentiment/docs/model *

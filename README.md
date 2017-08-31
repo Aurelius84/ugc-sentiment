@@ -1,10 +1,12 @@
 # sentinews
-Machine built to monitor public opinion. Models based on `stacked LSTM`(three layers)  was trained by `written language` from blog and article.
+Machine built to monitor public opinion. Models based on `bidirectial LSTM with attention`  was trained by `online ugc-comment` from 大众点评.
 
 
 ### Requirements
 - `Keras >= 2.0`
 - `tensorflow >= 1.1.0`
+- `h5py`
+- `matplotlib`
 - `jieba`
 - `PyYAML`
 - `python2.7`
@@ -13,7 +15,7 @@ Machine built to monitor public opinion. Models based on `stacked LSTM`(three la
 
 - **Install Package**
 ```bash
-$ pip install -U sentinews
+$ pip install -U ugc-sentiment
 ```
 
 - **sentiment**
@@ -21,53 +23,62 @@ $ pip install -U sentinews
 ```python
 # test.py
 # coding: utf-8
-from sentinews import SentiNews
+from ugc_sentiment import UgcSentiment
 
 conts = [
-    u'在绚丽之后，一条路慢慢展开，指南针引导东方与西方的握手，这是我们与世界的昨天。',
-    u'下面就完全陷于一种扯皮，机组与机场之间互相推诿指责，我们弄不清楚，只好旁观。'
+  u'服务态度太差了。团购去吃的，中午到的时候不到12点吧，手机在12点3分收到了已使用团购券。到了12点35的时候只上了一个菜，我实在是受不了了，就催服务员，服务员说让我稍等一下，饭菜20分钟左右就能好，我都等了40分钟了，才上一个菜，旁边的桌比我们晚来，菜上的都比我们多，你TMD能不开团购啊，能就开不能就别TM凑热闹 。。。。',
+  u'店里的食物不算太全但食物味道还算可以，店员服务态度很好，价格比起同类的有些小贵，店面还是比较整洁的'
 ]
 
 
 if __name__ == '__main__':
     # it will load model automatically
-    senti = SentiNews()
+    senti = UgcSentiment()
     # receive params of unicode string
     result = senti.sentiment(conts[0])
     # result:
     # {
-    # "labels": "中性",
-    # "probs": {
-    #     "中性": "0.954392",
-    #     "消极": "0.0124916",
-    #     "积极": "0.0331167"
-    #     }
+    # "labels": "2",
+    # "probs_json": {
+    #     "1": "0.43460175,,",
+    #     "2": "0.44080707,",
+    #     "3": "0.0980910137296",
+    #     "4": "0.007562303,",
+    #     "5": "0.0075623029843",
+    #     },
+    # "probs": '0.43460175395 0.440807074308 0.0980910137296 0.0189378540963 0.0075623029843'
     # }
 
     # also receive list of unicode string
     results = senti.sentiment(conts)
     # results:
     # [{
-    # "labels": "中性",
-    # "probs": {
-    #     "中性": "0.954392",
-    #     "消极": "0.0124916",
-    #     "积极": "0.0331167"
-    #     }
-    # },
+    # "labels": "2",
+    # "probs_json": {
+    #     "1": "0.43460175,,",
+    #     "2": "0.44080707,",
+    #     "3": "0.0980910137296",
+    #     "4": "0.007562303,",
+    #     "5": "0.0075623029843",
+    #     },
+    # "probs": '0.43460175395 0.440807074308 0.0980910137296 0.0189378540963 0.0075623029843'
+    # }，
     # {
-    # "labels": "消极",
-    # "probs": {
-    #     "中性": "0.357558",
-    #     "消极": "0.529143",
-    #     "积极": "0.113299"
-    #     }
+    # "labels": "3",
+    # "probs_json": {
+    #     "1": "0.0150475967675,,",
+    #     "2": "0.118314310908,",
+    #     "3": "0.647881686687",
+    #     "4": "0.167027801275,",
+    #     "5": "0.0517285950482",
+    #     },
+    # "probs": '0.0150475967675 0.118314310908 0.647881686687 0.167027801275 0.0517285950482'
     # }]
 ```
 
 
 ### License
 
-GNU (for details, please refer to [LICENSE](https://github.com/KillersDeath/the_machine/blob/master/LICENSE))
+GNU (for details, please refer to [LICENSE](https://github.com/KillersDeath/ugc-sentiment/blob/master/LICENSE))
 
 Copyright (c) 2017 LiujieZhang

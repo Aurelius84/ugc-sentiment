@@ -2,7 +2,7 @@
 
 iter:
     batch_size:    64
-    epoch:         6
+    epoch:         3
     learn_rate:    0.01
     model_dir:     '../docs/model/'
     model_name:    'default_best.h5'

@@ -29,7 +29,7 @@ p13
 (dp14
 S'sequence_length'
 p15
-I100
+I80
 sS'embedding_dim'
 p16
 I8
@@ -77,7 +77,7 @@ p36
 F0.01
 sS'epoch'
 p37
-I6
+I3
 sS'model_dir'
 p38
 S'../docs/model/'

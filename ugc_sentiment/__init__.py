@@ -8,18 +8,21 @@ from . import utils
 import jieba
 import numpy as np
 
-MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'docs/model')
+__version__ = '0.0.8'
+
+MODEL_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), 'docs/model')
 
 
-class SentiNews(object):
-    def __init__(self,
-                 model_flag='deep_lstm',
-                 model_dir=MODEL_DIR):
+class UgcSentiment(object):
+    def __init__(self, model_flag='deep_lstm', model_dir=MODEL_DIR):
         self.params = pickle.load(open(model_dir + '/params', 'rb'))
         self.vocabulary_inv = utils.dataHelper.load_var(
             model_dir + '/vocabulary_inv')
         self.vocabulary = {wd: i for i, wd in enumerate(self.vocabulary_inv)}
-        self.labels = [u"消极", u"中性", u"积极"]
+        self.labels = [
+            x.strip('\n') for x in open(model_dir + '/category', 'r')
+        ]
         # assemble model
         self.model = utils.assemble.assemble(model_flag, self.params)
         # load trained weights
@@ -42,8 +45,9 @@ class SentiNews(object):
         for i in range(len(probs)):
             json_data = {
                 "labels": self.labels[preds[i]],
-                "probs": {self.labels[j]: probs[i][j]
-                          for j in range(3)}
+                "probs_json": {self.labels[j]: probs[i][j]
+                               for j in range(5)},
+                "probs": ' '.join(probs[i].astype('string'))
             }
             result.append(json_data)
         # single data return json

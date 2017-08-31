@@ -18,16 +18,17 @@ import numpy as np
 import json
 import pickle
 from copy import deepcopy
+import matplotlib.pyplot as plt
 from collections import Counter
 from sklearn import preprocessing
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, confusion_matrix
 
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.optimizers import Adagrad, RMSprop
 
 sys.path.append('..')
 from utils.assemble import assemble
-from utils.dataHelper import load_data, save_var, corpus_balance, pad_sentences
+from utils.dataHelper import load_data, save_var, corpus_balance, pad_sentences, plot_confusion_matrix
 
 
 def train(train_dataset,
@@ -120,6 +121,15 @@ def train(train_dataset,
 
     print(classification_report(targets, preds, target_names=category))
 
+    # confusion_matrix
+    cnf_matrix = confusion_matrix(targets, preds)
+    np.set_printoptions(precision=2)
+    plt.figure()
+    plot_confusion_matrix(cnf_matrix, classes=category, title='Confusion matrix, without normalization')
+    plt.figure()
+    plot_confusion_matrix(cnf_matrix, classes=category, normalize=True, title='Confusion matrix, with normalization')
+    plt.show()
+
 
 def loadSentimentVector(file_name):
     """
@@ -160,7 +170,7 @@ if __name__ == '__main__':
     texts = [filter(lambda x: x != 0, content) for content in texts]
 
     # padding
-    texts = pad_sentences(texts, padding_word=0, mode=100)
+    texts = pad_sentences(texts, padding_word=0, mode=80)
     print(Counter(labels))
     # texts, labels = corpus_balance(texts, labels, mod='average')
     # save vocab

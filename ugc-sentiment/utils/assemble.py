@@ -3,7 +3,7 @@ Utility functions for constructing MLC models.
 """
 from keras.layers import Conv1D, Embedding, Flatten, MaxPool1D
 from keras.layers import Dense, Dropout, Input, Activation, Permute, Reshape, Lambda, RepeatVector, merge
-from keras.layers import ActivityRegularization, Bidirectional
+from keras.layers import ActivityRegularization, Bidirectional, TimeDistributed
 from keras.layers.normalization import BatchNormalization
 from keras.regularizers import l2
 from keras.layers import GRU
@@ -13,6 +13,7 @@ import keras.backend as K
 
 def attention_3d_block(inputs, time_steps, single_attention_vector=False):
     # inputs.shape = (batch_size, time_steps, input_dim)
+    print(inputs.shape)
     input_dim = int(inputs.shape[2])
     # time_steps = int(inputs.shape[1])
     a = Permute((2, 1))(inputs)
@@ -124,7 +125,7 @@ def assemble_deep_lstm(params):
                    params['X']['embedding_dim'],
                    ) if params['iter']['model_type'] == "CNN-static" else (
                        params['X']['sequence_length'], )
-    X = Input(shape=input_shape, dtype='float32', name='X')
+    X = Input(shape=input_shape, dtype='int32', name='X')
 
     # embedding
     # Static model do not have embedding layer
@@ -136,32 +137,34 @@ def assemble_deep_lstm(params):
             input_dim=params['X']['vocab_size'],
             input_length=params['X']['sequence_length'],
             name="embedding",
-            mask_zero=True)(X)
+            mask_zero=False)(X)
         embedding = Dropout(0.1)(embedding)
     else:
         exit('embedding_dim param is not given!')
-
     # multi-layer LSTM
     lstm_layer_num = len(params['LSTM'])
-    for i in range(1, lstm_layer_num):
-        lstm_input = embedding if i == 1 else lstm_out
-        # lstm_input = attention_3d_block(lstm_input, params['X']['sequence_length'], single_attention_vector=False)
-        lstm_out = Bidirectional(GRU(
-            params['LSTM']['layer%s' % i]['cell'],
-            # recurrent_activation='sigmoid',
-            kernel_regularizer=l2(0.01),
-            dropout=0.2,
-            recurrent_dropout=0.2,
-            return_sequences=True), merge_mode='ave')(lstm_input)
-        # batch_norm
-        if 'batch_norm' in params['LSTM']['layer%s' % i]:
-            kwargs = params['LSTM']['layer%s' % i]['batch_norm']
-            lstm_out = BatchNormalization(**kwargs)(lstm_out)
-        # dropout
-        if 'dropout' in params['LSTM']['layer%s' % i]:
-            lstm_out = Dropout(
-                params['LSTM']['layer%s' % i]['dropout'])(lstm_out)
+    # for i in range(1, lstm_layer_num):
+    #     lstm_input = embedding if i == 1 else lstm_out
+    #     # lstm_input = attention_3d_block(lstm_input, params['X']['sequence_length'], single_attention_vector=False)
+    #     lstm_out = Bidirectional(GRU(
+    #         params['LSTM']['layer%s' % i]['cell'],
+    #         # recurrent_activation='sigmoid',
+    #         kernel_regularizer=l2(0.01),
+    #         dropout=0.2,
+    #         recurrent_dropout=0.2,
+    #         return_sequences=True), merge_mode='ave')(lstm_input)
+    #
+    #     # batch_norm
+    #     if 'batch_norm' in params['LSTM']['layer%s' % i]:
+    #         kwargs = params['LSTM']['layer%s' % i]['batch_norm']
+    #         lstm_out = BatchNormalization(**kwargs)(lstm_out)
+    #     # dropout
+    #     if 'dropout' in params['LSTM']['layer%s' % i]:
+    #         lstm_out = Dropout(
+    #             params['LSTM']['layer%s' % i]['dropout'])(lstm_out)
     # last lstm
+    # print(lstm_out.shape)
+    # exit()
     lstm_out = Bidirectional(GRU(
         params['LSTM']['layer%s' % lstm_layer_num]['cell'],
         # recurrent_activation='sigmoid',
@@ -170,17 +173,21 @@ def assemble_deep_lstm(params):
         # recurrent_initializer='glorot_uniform',
         dropout=0.2,
         recurrent_dropout=0.2,
-        ), merge_mode='ave')(lstm_out)
+        return_sequences=True
+        ), merge_mode='ave')(embedding)
+    # attention_mul
+    attention_mul = attention_3d_block(lstm_out, params['X']['sequence_length'])
+    lstm_out = Flatten()(attention_mul)
 
     # batch_norm
-    if 'batch_norm' in params['LSTM']['layer%s' % lstm_layer_num]:
-        kwargs = params['LSTM']['layer%s' % lstm_layer_num]['batch_norm']
-        lstm_out = BatchNormalization(**kwargs)(lstm_out)
-    # dropout
-    if 'dropout' in params['LSTM']['layer%s' % lstm_layer_num]:
-        lstm_out = Dropout(
-            params['LSTM']['layer%s' % lstm_layer_num]['dropout'],
-            name='H')(lstm_out)
+    # if 'batch_norm' in params['LSTM']['layer%s' % lstm_layer_num]:
+    #     kwargs = params['LSTM']['layer%s' % lstm_layer_num]['batch_norm']
+    #     lstm_out = BatchNormalization(**kwargs)(lstm_out)
+    # # dropout
+    # if 'dropout' in params['LSTM']['layer%s' % lstm_layer_num]:
+    #     lstm_out = Dropout(
+    #         params['LSTM']['layer%s' % lstm_layer_num]['dropout'],
+    #         name='H')(lstm_out)
 
     # ATTENTION PART STARTS HERE
     # attention_probs = Dense(
@@ -193,7 +200,6 @@ def assemble_deep_lstm(params):
     #     name='attention_mul',
     #     mode='mul')
     # ATTENTION PART FINISHES HERE
-
     # Y output
     kwargs = params['Y']['kwargs'] if 'kwargs' in params['Y'] else {}
     if 'W_regularizer' in kwargs:

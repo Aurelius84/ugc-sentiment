@@ -15,7 +15,7 @@ Machine built to monitor public opinion. Models based on `bidirectial LSTM with 
 
 - **Install Package**
 ```bash
-$ pip install -U ugc-sentiment
+$ pip install -U ugc_sentiment
 ```
 
 - **sentiment**
